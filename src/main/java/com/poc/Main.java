@@ -3,27 +3,38 @@
  */
 package com.poc;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.TreeMap;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 public class Main {
 
-  public static void main(String[] args) throws JsonProcessingException {
-    final String input =
-        "{\n" + "\t\"name\": \"Bence\",\n" + "\t\"age\": 32,\n" + "\t\"alpha\": \"alpha\",\n" + "\t\"beta\": \"beta\"\n"
-            + "}";
+  public static void main(String[] args) throws IOException {
+    Path filePath = Path.of("src/main/resources/input.json");
+    String inputJson = Files.readString(filePath);
 
-    JsonMapper mapper = JsonMapper.builder().nodeFactory(new SortingNodeFactory()).build();
+//    FileReader inputJson = new FileReader("src/main/resources/input.json");   //Can't ready it twice out of the box
 
-    JsonNode node = mapper.readTree(input);
-    String output = mapper.writeValueAsString(node);
+    JsonMapper configuredMapper = JsonMapper.builder().nodeFactory(new SortingNodeFactory()).build();
+    ObjectMapper defaultMapper = new ObjectMapper();
 
-    System.out.println("Bare input: " + input);
-    System.out.println("With Property sorting: " + output);
+    JsonNode configuredJsonNode = configuredMapper.readTree(inputJson);
+
+    System.out.println("Bare inputJson: " + inputJson);
+    System.out.println("ConfiguredMapper output: " + configuredMapper.writeValueAsString(configuredJsonNode));
+
+    JsonNode defaultJsonNode = defaultMapper.readTree(inputJson);
+    System.out.println("Default Mapper output: " + defaultMapper.writeValueAsString(defaultJsonNode));
+
+    JsonNode customMappedJsonNode = configuredMapper.valueToTree(defaultJsonNode);
+    System.out.println("Parsed with Default Mapper, Re-serialized with ConfiguredMapper: " + defaultMapper
+        .writeValueAsString(customMappedJsonNode));
   }
 
   static class SortingNodeFactory extends JsonNodeFactory {
